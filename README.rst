@@ -1,13 +1,12 @@
 ======================================================
 File operations in Python, with a focus on image files
 ======================================================
-This is a collection of file operations in Python. The methods are untested!
-The image operations depend on Pillow, the movie operations on ffmpeg. For some image operations, numpy is used
-(to handle matrices with image pixels).
+This is a collection of file operations in Python.
+The image operations depend on Pillow, the movie operations on ffmpeg.
 Some methods might be useful in your project, just copy and paste them.
 
 All of these methods can be plugged in easily to the Nautilus file system, using 'python_nautilus'
-(select the file(s) or directory, and then right click and choose the action).
+(Then you can select the file(s) or directory, and apply any of these actions with a mouseclick).
 All the methods are listed with an explanation under 'list of methods'
 
 
@@ -27,21 +26,38 @@ Installation
 ===============
 List of methods
 ===============
-Here is a list of all the methods, including a user input prompt window, when you run the method as a Nautilus script.
+Here is a list of all the methods (and more will be added in the near future)
 
 * File operations
+- prefix_filename
+- postfix_filename
+- split_large_folder (for example in subdirectories of 100 files)
+- weed_out_files
+- make_filename_unrecognizable (convert filenames to an unreadable hash string)
+- number_filenames
+- sort_files_by_size
 
 * Image operations
+- resize_image
+- add_margin
+- crop_image_in_equal_parts
+- paste_image_in_center
+- crop_center
+- apply_filter
+- image_difference
 
-* Movie operations
+
+* video operations
+- make movie (from a directory of image files)
+- merge videos (take two or more video files, and past them to one final video file)
 
 
 ====
 TODO
 ====
-Test all these methods.
+Add descriptions for the methods
 
-update the readme
+Add screenshots as an example how the method can be made visible in Nautilus
 
 Add more methods that I stashed
 

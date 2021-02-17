@@ -1,5 +1,6 @@
 import os
 import random
+from time import time
 
 from PIL import Image, ImageFilter, ImageChops
 
@@ -220,15 +221,6 @@ def crop_center(file_path: str, new_width: int = 1080, new_height: int = 1080):
     return save_image(pil_image=image, new_file_path=new_file_path)
 
 
-class RandomFilter(ImageFilter.BuiltinFilter):
-    name = "Random"
-    filterargs = (3, 3), random.randint(0, 6), random.randint(6, 256), (
-        random.randint(-10, 10), random.randint(-10, 10), random.randint(-10, 10),
-        random.randint(-10, 10), random.randint(-10, 10), random.randint(-10, 10),
-        random.randint(-10, 10), random.randint(-10, 10), random.randint(-10, 10),
-    )
-
-
 def apply_filter(file_path: str, filter_name: str = 'BLUR', save_both_images: bool = False):
     """
     Apply the selected filter to the image(s).
@@ -239,13 +231,27 @@ def apply_filter(file_path: str, filter_name: str = 'BLUR', save_both_images: bo
     directory, file_name, extension = split_file_path(file_path)
     original_image = Image.open(file_path)
 
+    random_seed_str = ''  # will be post fixed to the filename, but should be empty when random is not used
     if filter_name == 'random':
+        # set a different seed at every function call, so when this is called for an entire directory, a different
+        # random filter will be applied for every image. Save the seed in the image name, so it can be reproduced.
+        random_seed = str(time()).split('.')[-1]
+        random_seed_str = '_seed{}'.format(random_seed)
+        random.seed(random_seed)
+
+        class RandomFilter(ImageFilter.BuiltinFilter):
+            name = "Random"
+            filterargs = (3, 3), random.randint(0, 6), random.randint(6, 256), (
+                random.randint(-10, 10), random.randint(-10, 10), random.randint(-10, 10),
+                random.randint(-10, 10), random.randint(-10, 10), random.randint(-10, 10),
+                random.randint(-10, 10), random.randint(-10, 10), random.randint(-10, 10),
+            )
         filtered_image = original_image.filter(filter=RandomFilter)
     else:
         pil_filter = getattr(ImageFilter, filter_name)
         filtered_image = original_image.filter(filter=pil_filter)
 
-    new_file_path = os.path.join(directory, '{}_{}.{}'.format(file_name, filter_name, extension))
+    new_file_path = os.path.join(directory, '{}_{}.{}'.format(file_name, filter_name, random_seed_str, extension))
 
     if save_both_images:
         # make a new image, where both the original and the filter image will be pasted next to each other.

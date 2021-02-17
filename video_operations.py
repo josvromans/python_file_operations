@@ -54,6 +54,8 @@ def make_movie(
 
     for image_file in glob.glob(os.path.join(directory_path, '*.{}'.format(image_extension))):
         shutil.move(image_file, separate_stills_folder)
+
+
 make_movie.combo_choices = {
     'video_extension': ['mp4', 'mov'],
 
@@ -84,3 +86,6 @@ def merge_videos(file_paths: list, final_video_name: str = 'final'):
     proc.wait()
 
     os.unlink(videos_to_merge_file_name)
+
+
+# TODO: make movie slideshow!

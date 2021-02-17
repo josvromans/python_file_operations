@@ -34,8 +34,8 @@ def postfix_filename(file_path: str, postfix: str = '_'):
 
 def split_large_folder(directory_path: str, files_per_sub_folder: int = 100):
     """
-    Loop through all the file paths and put them in new 'destination' sub directories,
-    'filer_per_sub_folder' at a time.
+    Split one directory into subdirectories of maximum 'files_per_sub_folder'.
+    This can be useful when a directory becomes too large to download or upload at once, or to open in the filesystem.
     """
     destination_directory = None  # will be set in the first iterations, then every files_per_sub_folder times
     for index, file_path in enumerate(get_sorted_file_paths(directory_path=directory_path)):
