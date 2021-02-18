@@ -2,7 +2,7 @@ import os
 import random
 from time import time
 
-from PIL import Image, ImageFilter, ImageChops
+from PIL import Image, ImageFilter, ImageChops, ImageDraw
 
 from helpers import split_file_path, save_image, TagDictionary
 
@@ -324,3 +324,90 @@ def save_image_tags(
         image_description=image_description or None,
         datetime=datetime or None,
     ).save_tags(image_file_path=file_path)
+
+
+def put_images_on_wall(
+    file_paths: list,
+    wall_color: tuple = (255, 255, 255),
+    space_between_two_images: int = 300,
+    pixels_above: int = 100,
+    pixels_below: int = 100,
+    vertical_align: str = 'top',
+    frame_width: int = 0,
+    frame_color: tuple = (0, 0, 0),
+):
+    """
+    Generate one image file, that contains all provided images pasted next to each other, with the provided spaces
+    in between. The wall color will be the background color.
+
+    A frame can be drawn around each image, when 'frame_width' is greater than 0.
+
+    The 'pixels_above' and 'pixels_below' will apply to the tallest image provided. All other images will be placed
+    relative to this tallest image, either the top, bottom or center will line up.
+
+    If the new image width exceeds 20000 pixels, do nothing.
+
+    Half the 'space_between_two_images' will be applied to the left and the right side of the image.
+    """
+    add_frame = frame_width > 0
+
+    pil_image_list = []
+    image_widths = []
+    max_height = 0
+    # collect the image widths and the max image height (so the output image dimensions can be calculated).
+    # Put the opened images in a list, so we don't have to open them again.
+    # When a file_path is not an image, it will fail here, before we create a new image.
+    for file_path in file_paths:
+        image = Image.open(fp=file_path)
+        pil_image_list.append(image)
+
+        image_widths.append(image.width)
+        if image.height > max_height:
+            max_height = image.height
+
+    image_count = len(file_paths)
+    new_image_width = sum(image_widths) + space_between_two_images * image_count
+    new_image_height = max_height + pixels_below + pixels_above
+    if add_frame:
+        new_image_width += (2 * frame_width * image_count)
+        new_image_height += (2 * frame_width)
+
+    assert new_image_width < 20000, 'Output image size will exceed 20000 pixels'
+
+    new_image = Image.new(mode=pil_image_list[0].mode, size=(new_image_width, new_image_height), color=wall_color)
+    draw = ImageDraw.Draw(new_image)
+
+    # top_x and top_y represent the upper left coordinates of where the image will be pasted
+    top_x = int((space_between_two_images / 2))
+    for pil_image in pil_image_list:
+        top_y = pixels_above
+
+        if vertical_align == 'bottom':
+            top_y += (max_height - pil_image.height)
+        elif vertical_align == 'center':
+            top_y += int((max_height - pil_image.height) / 2)
+
+        if add_frame:
+            draw.rectangle(xy=(
+                top_x,
+                top_y,
+                top_x + pil_image.width + 2 * frame_width,
+                top_y + pil_image.height + 2 * frame_width
+            ), fill=frame_color)
+
+            top_x += frame_width
+            top_y += frame_width
+
+        new_image.paste(im=pil_image, box=(top_x, top_y))
+        top_x += (pil_image.width + space_between_two_images)
+
+        if add_frame:
+            top_x += frame_width
+
+    directory, file_name, extension = split_file_path(file_paths[0])
+    new_file_path = os.path.join(directory, '{}_framed_to_wall.{}'.format(file_name, extension))
+    return save_image(pil_image=new_image, new_file_path=new_file_path)
+
+
+put_images_on_wall.color_parameters = ('wall_color', 'frame_color')
+put_images_on_wall.combo_choices = {'vertical_align': ['top', 'center', 'bottom']}

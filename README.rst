@@ -37,6 +37,7 @@ Here is a list of all the methods (and more will be added in the near future)
 - make_filename_unrecognizable (convert filenames to an unreadable hash string)
 - number_filenames
 - sort_files_by_size
+- duplicate_file
 
 * Image operations
 - resize_image
@@ -46,10 +47,13 @@ Here is a list of all the methods (and more will be added in the near future)
 - crop_center
 - apply_filter
 - image_difference
+- save_image_tags
+- put_images_on_wall
 
 
 * video operations
 - make movie (from a directory of image files)
+- make_slideshow (from a directory of image files, output a movie file)
 - merge videos (take two or more video files, and past them to one final video file)
 
 
