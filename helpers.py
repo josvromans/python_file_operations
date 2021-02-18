@@ -1,5 +1,12 @@
 import glob
 import os
+import piexif
+
+from PIL import Image, TiffImagePlugin
+
+
+TIFF_FORMAT = 'TIFF'
+JPEG_FORMAT = 'JPEG'
 
 
 def get_sorted_file_paths(directory_path):
@@ -76,3 +83,67 @@ def save_image(pil_image, new_file_path, enforce_unique_path=True, image_format=
         **extra_params,
     )
     return new_file_path
+
+
+TAG_ID_MAPPING = {
+    # hard code the mapping, it is implemented in different ways for TiffTag and piexif.ImageIFD,
+    # but boils down to the same ids.
+    # see piexif.TAGS for all the exif options. The keys here equal the name in piexif.TAGS
+    'Artist': 315,
+    'Copyright': 33432,
+    'Software': 305,
+    'ImageDescription': 270,
+    'ICCProfile': 34675,  # 0xC691 in exif?
+    'DateTime': 306,
+    # 'ProcessingSoftware': 11,  # Not in TiffTags
+    # 'ProfileCopyright': 50942,  # Not in TiffTags
+}
+
+
+class TagDictionary:
+    """
+    Container to bundle tag methods.
+    That is: exif stuff for jpegs, TiffTags for tiff files.
+    """
+    def __init__(self, artist=None, copyright=None, software=None, image_description=None, datetime=None):
+        tag_dict = {
+            TAG_ID_MAPPING['Artist']: artist,
+            TAG_ID_MAPPING['Copyright']: copyright,
+            TAG_ID_MAPPING['Software']: software,
+            TAG_ID_MAPPING['ImageDescription']: image_description,
+            TAG_ID_MAPPING['DateTime']: datetime,
+            # this id is just 0, 0, 0, 0, 0.. so probably nothing better then the default
+            # TAG_ID_MAPPING['ICCProfile']: ImageCms.createProfile(colorSpace='sRGB').profile_id,
+        }
+        # filter out the None values
+        self.tag_dict = {k: v for k, v in tag_dict.items() if v is not None}
+
+    def construct_exif_bytes(self):
+        """
+        For JPEG images, save an exif bytes dict
+        """
+        exif_dict = {"0th": self.tag_dict}
+        exif_bytes = piexif.dump(exif_dict)
+        return exif_bytes
+
+    def construct_tiff_tags(self):
+        tiff_info = TiffImagePlugin.ImageFileDirectory()
+
+        for key, value in self.tag_dict.items():
+            tiff_info[key] = value
+
+        return tiff_info
+
+    def save_tags(self, image_file_path):
+        image = Image.open(image_file_path)
+        file_format = image.tile[0][0]
+
+        if file_format == 'jpeg':
+            image.save(image_file_path, format=JPEG_FORMAT, exif=self.construct_exif_bytes(), quality='keep')
+        elif file_format == 'libtiff':
+            image.save(image_file_path, format=TIFF_FORMAT, tiffinfo=self.construct_tiff_tags())
+        elif file_format == 'raw':
+            raise NotImplementedError(
+                'The file_format is \'{}\', probably a tiff file without compression'.format(file_format))
+        else:
+            raise NotImplementedError('Could not save tags on this file format: {}'.format(file_format))

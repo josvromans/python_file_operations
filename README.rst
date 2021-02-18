@@ -3,6 +3,7 @@ File operations in Python, with a focus on image files
 ======================================================
 This is a collection of file operations in Python.
 The image operations depend on Pillow, the movie operations on ffmpeg.
+For adding image tags, piexif should be installed.
 Some methods might be useful in your project, just copy and paste them.
 
 All of these methods can be plugged in easily to the Nautilus file system, using 'python_nautilus'

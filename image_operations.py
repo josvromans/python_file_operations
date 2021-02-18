@@ -4,7 +4,7 @@ from time import time
 
 from PIL import Image, ImageFilter, ImageChops
 
-from helpers import split_file_path, save_image
+from helpers import split_file_path, save_image, TagDictionary
 
 
 def resize_image(file_path: str, new_width: int = 1080, new_height: int = 1080, resample: str = 'LANCZOS'):
@@ -288,3 +288,37 @@ def image_difference(file_paths: list):
     directory, file_name, extension = split_file_path(file_paths[0])
     new_file_path = os.path.join(directory, '{}_diff.{}'.format(file_name, extension))
     return save_image(pil_image=difference, new_file_path=new_file_path, image_format=image_1.format)
+
+
+def save_image_tags(
+    file_path: str,
+    artist: str = '',
+    copyright: str = '',
+    software: str = '',
+    image_description: str = '',
+    datetime: str = '',
+):
+    """
+    Save metadata on images. This works for jpeg with exif data, and for tiff files with tiff tags.
+    Other formats are currently not supported.
+
+    When leaving inputs blank, they will not be saved.
+
+    Important: Existing exif data will be overridden! So this is only useful to add a few image tags to
+    images without any tags.
+
+    Of course this this can be extended with more tags. Unfortunately they are defined differently for different file
+    formats. So when you want a general solution for all files, you have to look for specific software.
+    This is made to add a few of the basic tags. Useful if you want to add your name / software / description
+    and copyright (change the empty default strings to your name, your copyright notice, etc).
+
+    To inspect the exif tags in Linux with Imagemagick:
+    identify -verbose filename.jpeg
+    """
+    TagDictionary(
+        artist=artist or None,
+        copyright=copyright or None,
+        software=software or None,
+        image_description=image_description or None,
+        datetime=datetime or None,
+    ).save_tags(image_file_path=file_path)
