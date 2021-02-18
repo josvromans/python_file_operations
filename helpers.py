@@ -68,14 +68,25 @@ def save_image(pil_image, new_file_path, enforce_unique_path=True, image_format=
     """
     If the new_file_path already exists, determine a unique name, like new_file_path(2).jpeg
 
-    In case it is a jpeg file, always save it in highest quality.
+    In case it is a jpeg file, keep the quality and subsampling.
     """
     if enforce_unique_path and os.path.exists(new_file_path):
         new_file_path = determine_new_file_path(new_file_path)
 
     extra_params = {}
     if pil_image.format == 'JPEG':
-        extra_params['quality'] = 100
+        # if you are not satisfied with the quality of adjusted jpeg images, the commented code below might achieve
+        # what you want, or can point to image properties that are worth studying.
+        # quantization = getattr(pil_image, 'quantization', None)
+        # subsampling = JpegImagePlugin.get_sampling(pil_image)
+        # quality = 100 if quantization is None else -1
+        # extra_params['subsampling'] = subsampling
+        # extra_params['qtables'] = quantization
+        # extra_params['quality'] = quality
+        # quality = 100  # works for all images?
+
+        extra_params['subsampling'] = 0
+        extra_params['quality'] = 'keep'
 
     pil_image.save(
         fp=new_file_path,

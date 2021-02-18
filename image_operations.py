@@ -52,9 +52,8 @@ def add_margin(
     """
     original_image = Image.open(file_path)
     original_width, original_height = original_image.size
-    original_dimensions = original_image.size
 
-    new_image = Image.new(mode=original_image.mode, size=original_dimensions, color=background_color)
+    new_image = Image.new(mode=original_image.mode, size=original_image.size, color=background_color)
 
     original_image = original_image.resize(
         size=(original_width - 2 * margin, original_height - 2 * margin),
@@ -251,7 +250,7 @@ def apply_filter(file_path: str, filter_name: str = 'BLUR', save_both_images: bo
         pil_filter = getattr(ImageFilter, filter_name)
         filtered_image = original_image.filter(filter=pil_filter)
 
-    new_file_path = os.path.join(directory, '{}_{}.{}'.format(file_name, filter_name, random_seed_str, extension))
+    new_file_path = os.path.join(directory, '{}_{}{}.{}'.format(file_name, filter_name, random_seed_str, extension))
 
     if save_both_images:
         # make a new image, where both the original and the filter image will be pasted next to each other.
@@ -306,6 +305,9 @@ def save_image_tags(
 
     Important: Existing exif data will be overridden! So this is only useful to add a few image tags to
     images without any tags.
+
+    Important: When applying other image operations, the exif data could get lost on a new image save (for example
+    when a new image was created). So adding exif data makes sense on a final image file that will not be adjusted more.
 
     Of course this this can be extended with more tags. Unfortunately they are defined differently for different file
     formats. So when you want a general solution for all files, you have to look for specific software.

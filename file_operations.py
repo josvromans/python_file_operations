@@ -3,7 +3,7 @@ import shutil
 from hashlib import md5
 from time import time
 
-from helpers import split_file_path, get_sorted_file_paths
+from helpers import split_file_path, get_sorted_file_paths, determine_new_file_path
 
 
 def prefix_filename(file_path: str, prefix: str = '_'):
@@ -147,3 +147,14 @@ def sort_files_by_size(directory_path: str):
                 new_file_name = '{}.{}'.format(file_name, extension)
 
                 os.rename(file_path, os.path.join(new_folder_path, new_file_name))
+
+
+def duplicate_file(file_path: str, number_of_duplicates: int = 10):
+    """
+    Duplicate a file many times, every next one will be prefixed with (0), (1), (2), etc
+    """
+    for i in range(number_of_duplicates):
+        # this can be more efficient (just adding i to the filename),
+        # but the method below makes sure the new file name is unique
+        new_path = determine_new_file_path(file_path)
+        shutil.copy2(src=file_path, dst=new_path)
