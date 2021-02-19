@@ -49,6 +49,9 @@ Here is a list of all the methods (and more will be added in the near future)
 - image_difference
 - save_image_tags
 - put_images_on_wall
+- blur_edges
+- rotate_image
+- grayscale
 
 
 * video operations

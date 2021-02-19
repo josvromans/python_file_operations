@@ -460,3 +460,64 @@ def put_images_on_wall(
 put_images_on_wall.color_parameters = ('wall_color', 'frame_color')
 put_images_on_wall.combo_choices = {'vertical_align': ['top', 'center', 'bottom']}
 put_images_on_wall.combo_choices = {'frame': ['None', 'Colored Frame', 'Blur']}
+
+
+def rotate_image(
+    file_path: str,
+    angle_in_degrees: float = 90.0,
+    background_color: tuple = (255, 255, 255),
+    expand: bool = False,
+    point_of_rotation: str = 'center',
+):
+    """
+    Rotate the image (around the image center) and save as a new image file.
+
+    When 'expand' is not checked, the new image will have the same dimensions of the original image, and the image
+    is not resized. This means some parts (corner areas) of the original image will be outside the frame.
+
+    If 'expand' is checked, the rotated image will be entirely visible, which means the new image will be larger then
+    the original image (for all other angles than 0, 90, 180, 270, 360).
+
+    The empty space will be filled with the 'background_color'.
+    """
+    image = Image.open(fp=file_path)
+
+    # when the center is None, Pil Image.rotate will use the image center as the default.
+    center = (0, 0) if point_of_rotation == 'top_left' else None
+
+    rotated_image = image.rotate(
+        angle=angle_in_degrees,
+        # resample=1,  # default is 1: NEAREST
+        expand=expand,
+        center=center,
+        translate=None,  # optional translation to be applied after the rotation
+        fillcolor=background_color,
+    )
+
+    directory, file_name, extension = split_file_path(file_path)
+    new_file_path = os.path.join(directory, '{}_rotated{}.{}'.format(file_name, angle_in_degrees, extension))
+    return save_image(pil_image=rotated_image, new_file_path=new_file_path)
+
+
+rotate_image.color_parameters = ('background_color',)
+rotate_image.combo_choices = {'point_of_rotation': ['center', 'top_left']}
+
+
+def grayscale(file_path: str, convert_mode: str = 'L'):
+    """
+    Convert the image to grayscale and save as a new image file.
+    There are several options to choose from.
+
+    'L' and '1' work for jpeg ('LA' does not)
+    All modes work for png.
+
+    L and LA give a smooth result, '1' results in visible individual pixels
+    """
+    image = Image.open(file_path).convert(convert_mode)
+
+    directory, file_name, extension = split_file_path(file_path)
+    new_file_path = os.path.join(directory, '{}_grayscale_m{}.{}'.format(file_name, convert_mode, extension))
+    return save_image(pil_image=image, new_file_path=new_file_path)
+
+
+grayscale.combo_choices = {'convert_mode': ['L', '1', 'LA']}
