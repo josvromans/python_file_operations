@@ -92,7 +92,7 @@ Left: :code:`rotate_image` image 3a on a blue background. Right: :code:`solarize
 
 .. image:: example_images/cropped_in_4_parts.jpg
 
-:code:`crop_image_in_equal_parts` used with parameters :code:`x=2 and y=2` resulting in 4 equal image parts.
+:code:`crop_image_in_equal_parts` used with parameters :code:`x=2 and y=2` resulting in 4 image parts with equal dimensions.
 
 
 ==================================================
@@ -136,3 +136,20 @@ Write a Nautilus script, where all these methods are available in a user friendl
 Add more methods that I stashed
 
 write unit tests
+
+
+=======================
+Artworks made in Python
+=======================
+In case you like the artworks in this README, you can have a look at more of it at
+
+https://www.josvromans.com
+
+and
+
+https://www.instagram.com/jos.vromans (where most content is shared)
+
+Every single image on any of these places is generated in Python.
+In the process of creating and organizing my artworks, I wrote some of the methods that are now in this project.
+
+The Nautilus approach is the easiest way I could come up with, to apply certain actions (self written code) to (image) files in the filesystem (without typing file paths).
