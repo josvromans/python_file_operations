@@ -7,6 +7,11 @@ from PIL import Image, ImageFilter, ImageChops, ImageDraw
 from helpers import split_file_path, save_image, TagDictionary
 
 
+class Colors:
+    black = (0, 0, 0)
+    white = (255, 255, 255)
+
+
 def resize_image(file_path: str, new_width: int = 1080, new_height: int = 1080, resample: str = 'LANCZOS'):
     """
     Resize the image to the given dimensions (new_width, new_height).
@@ -43,7 +48,7 @@ resize_image.combo_choices = {'resample': [
 def add_margin(
     file_path: str,
     margin: int = 100,
-    background_color: tuple = (0, 0, 0),
+    background_color: tuple = Colors.black,
 ):
     """
     Take the original image from the file_path, then resize it, so it can be pasted on a new
@@ -154,7 +159,7 @@ def paste_image_in_center(
     file_path: str,
     new_image_width: int = 1920,
     new_image_height: int = 1080,
-    background_color: tuple = (255, 255, 255),
+    background_color: tuple = Colors.white,
 ):
     """
     Paste the original image in a new frame with the given dimensions.
@@ -259,7 +264,7 @@ def apply_filter(file_path: str, filter_name: str = 'BLUR', save_both_images: bo
         margin = 30
         new_image = Image.new(
             mode=original_image.mode,
-            size=(original_width * 2 + 3 * margin, original_height + 2 * margin), color=(255, 255, 255))
+            size=(original_width * 2 + 3 * margin, original_height + 2 * margin), color=Colors.white)
         new_image.paste(im=original_image, box=(margin, margin))
         new_image.paste(im=filtered_image, box=(margin * 2 + original_width, margin))
 
@@ -326,21 +331,56 @@ def save_image_tags(
     ).save_tags(image_file_path=file_path)
 
 
+def _blur_edges(original_image, radius: int = 20, background_color: tuple = Colors.white):
+    double_radius = 2 * radius
+    original_width, original_height = original_image.size
+
+    new_dimensions = (original_width + double_radius, original_height + double_radius)
+    new_image = Image.new(mode=original_image.mode, size=new_dimensions, color=background_color)
+
+    new_image.paste(original_image, (radius, radius))
+
+    # blur mask
+    mask = Image.new(mode='L', size=new_dimensions, color=255)
+    black = Image.new(mode='L', size=(original_width - double_radius, original_height - double_radius), color=0)
+    mask.paste(black, (double_radius, double_radius))
+
+    blur = new_image.filter(ImageFilter.GaussianBlur(radius / 2))
+    new_image.paste(blur, mask=mask)
+
+    return new_image
+
+
+def blur_edges(file_path: str, radius: int = 20, background_color: tuple = Colors.white):
+    original_image = Image.open(file_path)
+    background = _blur_edges(original_image, radius=radius, background_color=background_color)
+
+    directory, file_name, extension = split_file_path(file_path)
+    new_file_path = os.path.join(directory, '{}_blurred_edge.{}'.format(file_name, extension))
+    return save_image(pil_image=background, new_file_path=new_file_path)
+
+
+blur_edges.color_parameters = ('background_color', )
+
+
 def put_images_on_wall(
     file_paths: list,
-    wall_color: tuple = (255, 255, 255),
+    wall_color: tuple = Colors.white,
     space_between_two_images: int = 300,
     pixels_above: int = 100,
     pixels_below: int = 100,
     vertical_align: str = 'top',
-    frame_width: int = 0,
-    frame_color: tuple = (0, 0, 0),
+    frame: str = 'None',
+    frame_width: int = 30,
+    frame_color: tuple = Colors.black,
 ):
     """
     Generate one image file, that contains all provided images pasted next to each other, with the provided spaces
     in between. The wall color will be the background color.
 
-    A frame can be drawn around each image, when 'frame_width' is greater than 0.
+    A frame can be drawn around each image, when 'frame_width' is greater than 0 and a frame type is selected.
+    'Colored Frame' will draw a colored frame around the image (with the specified 'frame_width' and 'frame_color',
+    'Blur' will add a blur effect, that works best on a white background.
 
     The 'pixels_above' and 'pixels_below' will apply to the tallest image provided. All other images will be placed
     relative to this tallest image, either the top, bottom or center will line up.
@@ -348,8 +388,10 @@ def put_images_on_wall(
     If the new image width exceeds 20000 pixels, do nothing.
 
     Half the 'space_between_two_images' will be applied to the left and the right side of the image.
+
+    When this is called with one single file, a frame and margin will be added.
     """
-    add_frame = frame_width > 0
+    add_frame = frame in ['Colored Frame', 'Blur'] and frame_width > 0
 
     pil_image_list = []
     image_widths = []
@@ -387,7 +429,7 @@ def put_images_on_wall(
         elif vertical_align == 'center':
             top_y += int((max_height - pil_image.height) / 2)
 
-        if add_frame:
+        if add_frame and frame == 'Colored Frame':
             draw.rectangle(xy=(
                 top_x,
                 top_y,
@@ -398,7 +440,13 @@ def put_images_on_wall(
             top_x += frame_width
             top_y += frame_width
 
-        new_image.paste(im=pil_image, box=(top_x, top_y))
+            new_image.paste(im=pil_image, box=(top_x, top_y))
+        elif add_frame and frame == 'Blur':
+            blurred_frame_image = _blur_edges(pil_image, radius=frame_width, background_color=wall_color)
+            new_image.paste(im=blurred_frame_image, box=(top_x, top_y))
+        else:
+            new_image.paste(im=pil_image, box=(top_x, top_y))
+
         top_x += (pil_image.width + space_between_two_images)
 
         if add_frame:
@@ -411,3 +459,4 @@ def put_images_on_wall(
 
 put_images_on_wall.color_parameters = ('wall_color', 'frame_color')
 put_images_on_wall.combo_choices = {'vertical_align': ['top', 'center', 'bottom']}
+put_images_on_wall.combo_choices = {'frame': ['None', 'Colored Frame', 'Blur']}
