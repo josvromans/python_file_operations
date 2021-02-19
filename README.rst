@@ -45,14 +45,15 @@ Here is a list of all the methods (and more will be added in the near future)
 - crop_image_in_equal_parts
 - paste_image_in_center
 - crop_center
-- apply_filter
+- apply_filter (BLUR, FIND_EDGES, CONTOUR, DETAIL, EDGE_ENHANCE, EMBOSS, SHARPEN, SMOOTH, random)
 - image_difference
 - save_image_tags
 - put_images_on_wall
 - blur_edges
 - rotate_image
 - grayscale
-
+- color_grayscale
+- solarize
 
 * video operations
 - make movie (from a directory of image files)

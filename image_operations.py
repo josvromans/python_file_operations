@@ -2,13 +2,14 @@ import os
 import random
 from time import time
 
-from PIL import Image, ImageFilter, ImageChops, ImageDraw
+from PIL import Image, ImageFilter, ImageChops, ImageDraw, ImageOps
 
-from helpers import split_file_path, save_image, TagDictionary
+from helpers import split_file_path, save_image, TagDictionary, get_new_file_path
 
 
 class Colors:
     black = (0, 0, 0)
+    gray = (127, 127, 127)
     white = (255, 255, 255)
 
 
@@ -31,10 +32,9 @@ def resize_image(file_path: str, new_width: int = 1080, new_height: int = 1080, 
         return
 
     image = image.resize(size=(new_width, new_height), resample=getattr(Image, resample))
-    directory, file_name, extension = split_file_path(file_path)
     return save_image(
         pil_image=image,
-        new_file_path=os.path.join(directory, '{}_resized.{}'.format(file_name, extension))
+        new_file_path=get_new_file_path(file_path, post_fix_filename='resized'),
     )
 
 
@@ -66,8 +66,7 @@ def add_margin(
     )
     new_image.paste(im=original_image, box=(margin, margin))
 
-    directory, file_name, extension = split_file_path(file_path)
-    new_file_path = os.path.join(directory, '{}_with_margin{}.{}'.format(file_name, margin, extension))
+    new_file_path = get_new_file_path(file_path, post_fix_filename='with_margin{}'.format(margin))
     return save_image(pil_image=new_image, new_file_path=new_file_path)
 
 
@@ -134,7 +133,6 @@ def crop_image_in_equal_parts(file_path: str, x: int = 2, y: int = 2):
         cropped_image = image.crop(dimensions)
 
         new_file_path = os.path.join(directory, '{}_crop{}.{}'.format(file_name, index, extension))
-
         save_image(pil_image=cropped_image, new_file_path=new_file_path, image_format=image.format)
         new_file_names.append(new_file_path)
 
@@ -189,10 +187,8 @@ def paste_image_in_center(
     new_image = Image.new(mode=image.mode, size=new_image_size, color=background_color)
     new_image.paste(im=image, box=(delta_x, delta_y))
 
-    directory, file_name, extension = split_file_path(file_path)
-
-    new_file_path = os.path.join(directory, '{}_centered{}x{}.{}'.format(
-        file_name, new_image_size[0], new_image_size[1], extension))
+    new_file_path = get_new_file_path(
+        file_path, post_fix_filename='centered{}x{}'.format(new_image_size[0], new_image_size[1]))
     return save_image(pil_image=new_image, new_file_path=new_file_path, image_format=image.format)
 
 
@@ -219,9 +215,7 @@ def crop_center(file_path: str, new_width: int = 1080, new_height: int = 1080):
 
     image = image.crop((left, top, right, bottom))
 
-    directory, file_name, extension = split_file_path(file_path)
-    new_file_path = os.path.join(directory, '{}_cropped_center.{}'.format(file_name, extension))
-
+    new_file_path = get_new_file_path(file_path, post_fix_filename='cropped_center')
     return save_image(pil_image=image, new_file_path=new_file_path)
 
 
@@ -289,8 +283,7 @@ def image_difference(file_paths: list):
     image_2 = Image.open(file_paths[1])
     difference = ImageChops.difference(image_1, image_2)
 
-    directory, file_name, extension = split_file_path(file_paths[0])
-    new_file_path = os.path.join(directory, '{}_diff.{}'.format(file_name, extension))
+    new_file_path = get_new_file_path(file_paths[0], post_fix_filename='diff')
     return save_image(pil_image=difference, new_file_path=new_file_path, image_format=image_1.format)
 
 
@@ -355,8 +348,7 @@ def blur_edges(file_path: str, radius: int = 20, background_color: tuple = Color
     original_image = Image.open(file_path)
     background = _blur_edges(original_image, radius=radius, background_color=background_color)
 
-    directory, file_name, extension = split_file_path(file_path)
-    new_file_path = os.path.join(directory, '{}_blurred_edge.{}'.format(file_name, extension))
+    new_file_path = get_new_file_path(file_path, post_fix_filename='blurred_edge')
     return save_image(pil_image=background, new_file_path=new_file_path)
 
 
@@ -452,8 +444,7 @@ def put_images_on_wall(
         if add_frame:
             top_x += frame_width
 
-    directory, file_name, extension = split_file_path(file_paths[0])
-    new_file_path = os.path.join(directory, '{}_framed_to_wall.{}'.format(file_name, extension))
+    new_file_path = get_new_file_path(file_paths[0], post_fix_filename='framed_to_wall')
     return save_image(pil_image=new_image, new_file_path=new_file_path)
 
 
@@ -494,8 +485,7 @@ def rotate_image(
         fillcolor=background_color,
     )
 
-    directory, file_name, extension = split_file_path(file_path)
-    new_file_path = os.path.join(directory, '{}_rotated{}.{}'.format(file_name, angle_in_degrees, extension))
+    new_file_path = get_new_file_path(file_path, post_fix_filename='rotated{}'.format(angle_in_degrees))
     return save_image(pil_image=rotated_image, new_file_path=new_file_path)
 
 
@@ -514,10 +504,59 @@ def grayscale(file_path: str, convert_mode: str = 'L'):
     L and LA give a smooth result, '1' results in visible individual pixels
     """
     image = Image.open(file_path).convert(convert_mode)
+    # ImageOps.grayscale(image) seemed like a good alternative, but it just calls image.convert("L")
 
-    directory, file_name, extension = split_file_path(file_path)
-    new_file_path = os.path.join(directory, '{}_grayscale_m{}.{}'.format(file_name, convert_mode, extension))
+    new_file_path = get_new_file_path(file_path, post_fix_filename='grayscale_mode{}'.format(convert_mode))
     return save_image(pil_image=image, new_file_path=new_file_path)
 
 
 grayscale.combo_choices = {'convert_mode': ['L', '1', 'LA']}
+
+
+def color_grayscale(
+    file_path: str,
+    color_1: tuple = Colors.black,
+    mid_color: tuple = Colors.gray,
+    color_2: tuple = Colors.white,
+    use_mid_color: bool = False,
+
+    black_point: int = 0,
+    white_point: int = 255,
+    mid_point: int = 127,
+):
+    """
+    Colorize grayscale image. From PIL.ImageOps.colorize:
+
+    This function calculates a color wedge which maps all black pixels in
+    the source image to the first color and all white pixels to the
+    second color. If **mid_point** is specified, it uses three-color mapping.
+
+    Optionally you can use three-color mapping by also specifying **use_mid_color**.
+    Mapping positions for any of the colors can be specified
+    (e.g. **black_point**), where these parameters are the integer
+    value corresponding to where the corresponding color should be mapped.
+    These parameters must have logical order, such that
+    **black_point** <= **mid_point** <= **white_point** (if **mid_color** and use_mid_color is specified).
+    """
+    colored_image = ImageOps.colorize(
+        image=Image.open(fp=file_path),
+        black=color_1,
+        white=color_2,
+        mid=mid_color if use_mid_color else None,
+        blackpoint=black_point, whitepoint=white_point, midpoint=mid_point)
+
+    new_file_path = get_new_file_path(file_path, post_fix_filename='colorized')
+    return save_image(pil_image=colored_image, new_file_path=new_file_path)
+
+
+color_grayscale.color_parameters = ('color_1', 'mid_color', 'color_2')
+
+
+def solarize(file_path: str, threshold: int = 128):
+    """
+    Invert all pixel values above a threshold.
+    """
+    image = ImageOps.solarize(image=Image.open(fp=file_path), threshold=threshold)
+
+    new_file_path = get_new_file_path(file_path, post_fix_filename='solarized{}'.format(threshold))
+    return save_image(pil_image=image, new_file_path=new_file_path)

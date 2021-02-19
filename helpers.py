@@ -24,6 +24,15 @@ def split_file_path(file_path):
     return directory, file_name, extension
 
 
+def get_new_file_path(original_file_path, post_fix_filename):
+    """
+    Take the original file path, and append a postfix to the file name
+    """
+    directory, file_name, extension = split_file_path(original_file_path)
+    file_name = '{}_{}'.format(file_name, post_fix_filename)[:180]  # prevent large file names
+    return os.path.join(directory, '{}.{}'.format(file_name, extension))
+
+
 def sort_and_filter_extensions(file_paths, allowed_extensions=None):
     if allowed_extensions:
         file_paths = [file_path for file_path in file_paths if file_path.split('.')[-1].lower() in allowed_extensions]
